@@ -9,12 +9,15 @@ file_extensions:
   - Cargo.lock
   - Gopkg.lock
   - Pipfile
+  - pdm.lock
+  - poetry.lock
+  - uv.lock
 
 scope: source.toml
 
 variables:
   ws: '[ \t]*'
-  wsnl: '([ \t\n])*'
+  wsnl: '(?:[ \t\n]*)'
 
   # Used to detect the possible start of a key.
   peek_key_start: '(?=[A-Za-z0-9_''"-])'
@@ -29,10 +32,13 @@ variables:
   oct_int: '0o[0-7](?:[0-7]|_[0-7])*'
   bin_int: '0b[0-1](?:[0-1]|_[0-1])*'
 
-  # frac = "." DIGIT *( DIGIT / "_" DIGIT )
-  frac: '\. [0-9] (?: [0-9] | _ [0-9] )*'
-  # exp = ("e" / "E") integer
-  exp: '[eE] {{integer}}'
+  # zero-prefixable-int = DIGIT *( DIGIT / underscore DIGIT )
+  zero_prefixable_int: '[0-9] (?: [0-9] | _ [0-9] )*'
+  # frac = decimal-point zero-prefixable-int
+  frac: '\. {{zero_prefixable_int}}'
+  # exp = "e" float-exp-part
+  # float-exp-part = [ minus / plus ] zero-prefixable-int
+  exp: '[eE] [\+\-]? {{zero_prefixable_int}}'
 
   # date-time      = offset-date-time / local-date-time / local-date / local-time
   date_time: '{{offset_date_time}} | {{local_date_time}} | {{local_date}} | {{local_time}}'
@@ -53,7 +59,7 @@ variables:
   # time-numoffset = ( "+" / "-" ) time-hour ":" time-minute
   time_numoffset: '[+-] {{time_hour}} : {{time_minute}}'
   # time-offset    = "Z" / time-numoffset
-  time_offset: '(?: Z | {{time_numoffset}} )'
+  time_offset: '(?: [zZ] | {{time_numoffset}} )'
   # partial-time   = time-hour ":" time-minute ":" time-second [time-secfrac]
   partial_time: '{{time_hour}} : {{time_minute}} : {{time_second}} (?: {{time_secfrac}} )?'
   # full-date      = date-fullyear "-" date-month "-" date-mday
@@ -61,9 +67,9 @@ variables:
   # full-time      = partial-time time-offset
   full_time: '{{partial_time}} {{time_offset}}'
   # offset-date-time = full-date T|%20 full-time
-  offset_date_time: '{{full_date}} [T ] {{full_time}}'
+  offset_date_time: '{{full_date}} [tT ] {{full_time}}'
   # local-date-time = full-date T|%20 partial-time
-  local_date_time: '{{full_date}} [T ] {{partial_time}}'
+  local_date_time: '{{full_date}} [tT ] {{partial_time}}'
   # local-date = full-date
   local_date: '{{full_date}}'
   # local-time = partial-time
@@ -127,9 +133,10 @@ contexts:
       pop: true
 
   float:
-    # float = integer ( frac / ( frac exp ) / exp )
-    # frac = "." DIGIT *( DIGIT / "_" DIGIT )
-    # exp = ("e" / "E") integer
+    # float = float-int-part ( exp / frac [ exp ] )
+    # float =/ special-float
+    # special-float = [ minus / plus ] ( inf / nan )
+    # float-int-part = dec-int
     - match: |-
         (?x)
           (?<!\w)
@@ -242,33 +249,44 @@ contexts:
     - match: '\{'
       scope: punctuation.definition.inline-table.begin.toml
       set:
-        - match: '{{ws}}'
+        - match: '{{wsnl}}'
+        - include: comments
         - match: '\}'
           # Empty table.
           scope: punctuation.definition.inline-table.end.toml
           pop: true
-        - match: ''
+        - match: '(?=\S)'
           set: [inline-keyval-sep, key]
 
   inline-keyval-sep:
     - match: '{{ws}}(=){{ws}}'
       captures:
         1: punctuation.definition.key-value.toml
-      set: [inline-table-keyvals, data-types]
+      set:
+        - match: '\}'
+          scope: invalid.illegal.inline-sep.toml
+          pop: true
+        - match: '(?=\S)'
+          set: [inline-table-keyvals, data-types]
     - match: '(?=\w+|.)'
       scope: invalid.illegal.inline-sep.toml
       pop: true
 
   inline-table-keyvals:
-    - match: '{{ws}}'
+    - match: '{{wsnl}}'
+    - include: comments
     - match: '\}'
       scope: punctuation.definition.inline-table.end.toml
       pop: true
     - match: ','
       scope: punctuation.separator.inline-table.toml
       set:
-        - match: '{{ws}}'
-        - match: ''
+        - match: '{{wsnl}}'
+        - include: comments
+        - match: '\}'
+          scope: punctuation.definition.inline-table.end.toml
+          pop: true
+        - match: '(?=\S)'
           set: [inline-keyval-sep, key]
     - match: '(?=\w+|.)'
       scope: invalid.illegal.inline-key.toml

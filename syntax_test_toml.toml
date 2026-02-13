@@ -1,4 +1,4 @@
-# SYNTAX TEST "Packages/sublime_toml_highlighting/TOML.sublime-syntax"
+# SYNTAX TEST "Packages/TOML/TOML.sublime-syntax"
 
 # This is a TOML document. Boom.
 # <- comment.line.number-sign punctuation.definition.comment
@@ -425,6 +425,10 @@ a = 5e+22
 #   ^^^^^ constant.numeric.float
 a = 1e6
 #   ^^^ constant.numeric.float
+a = 1e06
+#   ^^^^ constant.numeric.float
+a = 1e+06
+#   ^^^^^ constant.numeric.float
 a = -2E-2
 #   ^ keyword.operator.arithmetic
 #   ^^^^^ constant.numeric.float
@@ -521,6 +525,8 @@ ldt1s = 1979-05-27 07:32:00
 #       ^^^^^^^^^^^^^^^^^^^ constant.other.datetime
 ldt2s = 1979-05-27 00:32:00.999999
 #       ^^^^^^^^^^^^^^^^^^^^^^^^^^ constant.other.datetime
+lowercase = 1997-09-09t09:09:09z
+#           ^^^^^^^^^^^^^^^^^^^^ constant.other.datetime
 
 #-----------------------------------------------------------------------------
 # Invalid Date-Time
@@ -881,24 +887,74 @@ t = {b=true, i=1, f=1.0, dt=1979-05-27T07:32:00Z, s1='s', s2="s", s3='''s''', s4
 #                                                                                                      ^^ punctuation.definition.inline-table.end
 
 #-----------------------------------------------------------------------------
+# Multi-line inline tables.
+#-----------------------------------------------------------------------------
+t = {
+    b=true,
+#   ^ entity.name.tag
+#    ^ punctuation.definition.key-value
+#     ^^^^ constant.language
+#         ^ punctuation.separator.inline-table
+    i=1,
+#   ^ entity.name.tag
+#      ^ punctuation.separator.inline-table
+}
+#<- punctuation.definition.inline-table.end
+
+t = { # Comment
+#   ^ punctuation.definition.inline-table.begin
+#     ^^^^^^^^^ comment.line.number-sign
+    # Comment
+#   ^^^^^^^^^ comment.line.number-sign
+    b=true, # Comment
+#   ^ meta.tag.key entity.name.tag
+#    ^ punctuation.definition.key-value
+#           ^^^^^^^^^ comment.line.number-sign
+    i=1
+    # Comment
+#   ^^^^^^^^^ comment.line.number-sign
+}
+#<- punctuation.definition.inline-table.end
+
+t = {
+}
+#<- punctuation.definition.inline-table.end
+
+t = {key=1,}
+#    ^^^ meta.tag.key entity.name.tag
+#         ^ punctuation.separator.inline-table
+#          ^ punctuation.definition.inline-table.end
+
+t = {a=1, }
+#    ^ meta.tag.key entity.name.tag
+#       ^ punctuation.separator.inline-table
+#         ^ punctuation.definition.inline-table.end
+
+#-----------------------------------------------------------------------------
 # Invalid inline table
 #-----------------------------------------------------------------------------
 t = {,}
 #    ^^ invalid.illegal
 t = {=}
+#    ^ punctuation.definition.key-value
 #     ^ invalid.illegal
-t = {
-}  # comment to clear scope
-#<- invalid.illegal
-t = {key=1,}
-#          ^ invalid.illegal
 t = {key}
+#    ^^^ meta.tag.key entity.name.tag
 #       ^ invalid.illegal
 t = {key=1 asdf}
 #          ^^^^^ invalid.illegal
 t = {key=1, asdf}
+#           ^^^^ meta.tag.key entity.name.tag
 #               ^ invalid.illegal
 t = {key=invalid}
+#       ^ punctuation.definition.key-value
 #        ^^^^^^^ invalid.illegal.value
+#               ^ punctuation.definition.inline-table.end
 t = {!=123}
 #    ^ invalid.illegal.key
+#     ^ punctuation.definition.key-value
+#      ^^^ constant.numeric.integer
+#         ^ punctuation.definition.inline-table.end
+[test] # Verify that the illegal scope has popped
+#^^^^ meta.tag.table entity.name.table
+#    ^ punctuation.definition.table.end
