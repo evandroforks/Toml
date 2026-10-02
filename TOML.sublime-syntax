@@ -2,13 +2,20 @@
 ---
 # http://www.sublimetext.com/docs/3/syntax.html
 name: TOML
+version: 2
 
 file_extensions:
   - toml
   - tml
+  - Pipfile
+
+hidden_file_extensions:
   - Cargo.lock
   - Gopkg.lock
-  - Pipfile
+  - mise.lock
+  - pdm.lock
+  - poetry.lock
+  - uv.lock
 
 scope: source.toml
 
@@ -54,8 +61,8 @@ variables:
   time_numoffset: '[+-] {{time_hour}} : {{time_minute}}'
   # time-offset    = "Z" / time-numoffset
   time_offset: '(?: Z | {{time_numoffset}} )'
-  # partial-time   = time-hour ":" time-minute ":" time-second [time-secfrac]
-  partial_time: '{{time_hour}} : {{time_minute}} : {{time_second}} (?: {{time_secfrac}} )?'
+  # partial-time   = time-hour ":" time-minute [":" time-second [time-secfrac]]
+  partial_time: '{{time_hour}} : {{time_minute}} (?: : {{time_second}} (?: {{time_secfrac}} )? )?'
   # full-date      = date-fullyear "-" date-month "-" date-mday
   full_date: '{{date_fullyear}} - {{date_month}} - {{date_mday}}'
   # full-time      = partial-time time-offset
@@ -186,7 +193,7 @@ contexts:
           pop: true
 
   string-escape:
-    - match: '\\(?:[btnfr"\\]|u\h{4}|U\h{8})'
+    - match: '\\(?:[btnfre"\\]|x\h{2}|u\h{4}|U\h{8})'
       scope: constant.character.escape.toml
     - match: '\\.'
       scope: invalid.illegal.string.escape.toml
@@ -242,12 +249,13 @@ contexts:
     - match: '\{'
       scope: punctuation.definition.inline-table.begin.toml
       set:
-        - match: '{{ws}}'
+        - match: '[ \t\n]+'
+        - include: comments
         - match: '\}'
           # Empty table.
           scope: punctuation.definition.inline-table.end.toml
           pop: true
-        - match: ''
+        - match: '(?=.)'
           set: [inline-keyval-sep, key]
 
   inline-keyval-sep:
@@ -260,15 +268,20 @@ contexts:
       pop: true
 
   inline-table-keyvals:
-    - match: '{{ws}}'
+    - match: '[ \t\n]+'
+    - include: comments
     - match: '\}'
       scope: punctuation.definition.inline-table.end.toml
       pop: true
     - match: ','
       scope: punctuation.separator.inline-table.toml
       set:
-        - match: '{{ws}}'
-        - match: ''
+        - match: '[ \t\n]+'
+        - include: comments
+        - match: '\}'
+          scope: punctuation.definition.inline-table.end.toml
+          pop: true
+        - match: '(?=.)'
           set: [inline-keyval-sep, key]
     - match: '(?=\w+|.)'
       scope: invalid.illegal.inline-key.toml

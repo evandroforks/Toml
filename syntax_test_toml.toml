@@ -1,4 +1,4 @@
-# SYNTAX TEST "Packages/sublime_toml_highlighting/TOML.sublime-syntax"
+# SYNTAX TEST "Packages/TOML/TOML.sublime-syntax"
 
 # This is a TOML document. Boom.
 # <- comment.line.number-sign punctuation.definition.comment
@@ -511,6 +511,10 @@ lt1 = 07:32:00
 #     ^^^^^^^^ constant.other.datetime
 lt2 = 00:32:00.999999
 #     ^^^^^^^^^^^^^^^ constant.other.datetime
+lt3 = 07:32
+#     ^^^^^ constant.other.datetime
+odt4 = 1979-05-27T07:32Z
+#      ^^^^^^^^^^^^^^^^ constant.other.datetime
 odt1s = 1979-05-27 07:32:00Z
 #       ^^^^^^^^^^^^^^^^^^^^ constant.other.datetime
 odt2s = 1979-05-27 00:32:00-07:00
@@ -532,7 +536,7 @@ a = 1999-12-31T
 no-leads = 1987-7-05T17:45:00Z
 #              ^^^^^^^^^^^^^^^ invalid.illegal
 no-secs = 1987-07-05T17:45Z
-#                   ^^^^^^^ invalid.illegal
+#         ^^^^^^^^^^^^^^^^^ constant.other.datetime
 no-t = 1987-07-0517:45:00Z
 #                        ^ invalid.illegal
 with-milli = 1987-07-5T17:45:00.12Z
@@ -636,7 +640,10 @@ s = ''''''
 s = "
 #    ^ invalid.illegal.string.non-terminated
 s = "\a\x12"
-#    ^^^^ invalid.illegal.string.escape
+#    ^^ invalid.illegal.string.escape
+#      ^^^^ constant.character.escape
+s = "\e"
+#    ^^ constant.character.escape
 s = "\u"
 #    ^^ invalid.illegal.string.escape
 s = "\u1"
@@ -879,6 +886,8 @@ t = {b=true, i=1, f=1.0, dt=1979-05-27T07:32:00Z, s1='s', s2="s", s3='''s''', s4
 #                                                                                                    ^ punctuation.definition.key-value
 #                                                                                                     ^ constant.numeric.integer
 #                                                                                                      ^^ punctuation.definition.inline-table.end
+t = {key=1,}
+#          ^ punctuation.definition.inline-table.end
 
 #-----------------------------------------------------------------------------
 # Invalid inline table
@@ -887,11 +896,6 @@ t = {,}
 #    ^^ invalid.illegal
 t = {=}
 #     ^ invalid.illegal
-t = {
-}  # comment to clear scope
-#<- invalid.illegal
-t = {key=1,}
-#          ^ invalid.illegal
 t = {key}
 #       ^ invalid.illegal
 t = {key=1 asdf}
@@ -902,3 +906,16 @@ t = {key=invalid}
 #        ^^^^^^^ invalid.illegal.value
 t = {!=123}
 #    ^ invalid.illegal.key
+
+# TOML 1.1 permits multiline inline tables and comments between entries.
+contact = {
+    personal = {
+        name = "Donald Duck", # a comment
+#       ^^^^ entity.name.tag - invalid
+#              ^^^^^^^^^^^^^ string.quoted.double.basic - invalid
+        email = "donald@example.com",
+#       ^^^^^ entity.name.tag - invalid
+    },
+#   ^ punctuation.definition.inline-table.end - invalid
+}
+#<- punctuation.definition.inline-table.end - invalid

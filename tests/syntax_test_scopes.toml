@@ -1,0 +1,26 @@
+# SYNTAX TEST "Packages/TOML/TOML.sublime-syntax"
+
+# Keep the fork's key and table scopes while accepting TOML 1.1 values.
+[table]
+#^^^^^ entity.name.table.toml
+key = "value"
+# <- entity.name.tag.toml
+#     ^^^^^^^ string.quoted.double.basic.toml
+
+time = 07:32
+#      ^^^^^ constant.other.datetime.toml
+datetime = 1979-05-27T07:32Z
+#          ^^^^^^^^^^^^^^^^^ constant.other.datetime.toml
+escape = "\x12 \e"
+#         ^^^^ constant.character.escape.toml
+#              ^^ constant.character.escape.toml
+
+table = {
+#       ^ punctuation.definition.inline-table.begin.toml
+    first = 1, # comment
+#   ^^^^^ entity.name.tag.toml - invalid
+#            ^ punctuation.separator.inline-table.toml
+    second = "two",
+#   ^^^^^^ entity.name.tag.toml - invalid
+}
+# <- punctuation.definition.inline-table.end.toml - invalid

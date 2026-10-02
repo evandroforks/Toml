@@ -1,0 +1,6 @@
+# SYNTAX TEST "Packages/TOML/TOML.sublime-syntax"
+
+  [section]
+#  @@@@@@@ local-definition
+  key = 1
+# @@@ local-definition
